@@ -26,7 +26,7 @@ contract Ownable {
 
     modifier isRealAddress(address _address) 
     {
-        require(_address, address(_address), 'Owner is not a real address.');
+        require(_address == address(_address), 'Owner is not a real address.');
         _;
     }
 
@@ -34,20 +34,61 @@ contract Ownable {
     //  5) create an event that emits anytime ownerShip is transfered (including in the constructor)
     event OwnershipTransfered(address newOwner);
 
-    function transferOwnership(address newOwner) public onlyOwner isRealAddress(newOwner) {
+    function transferOwnership(address newOwner) public onlyOwner isRealAddress(newOwner) 
+    {
         // TODO add functionality to transfer control of the contract to a newOwner.
         // make sure the new owner is a real address
         _owner = newOwner;
-        OwnershipTransfered(newOwner);
+        emit OwnershipTransfered(newOwner);
     }
 }
 
 //  TODO's: Create a Pausable contract that inherits from the Ownable contract
-//  1) create a private '_paused' variable of type bool
-//  2) create a public setter using the inherited onlyOwner modifier 
-//  3) create an internal constructor that sets the _paused variable to false
-//  4) create 'whenNotPaused' & 'paused' modifier that throws in the appropriate situation
-//  5) create a Paused & Unpaused event that emits the address that triggered the event
+contract Pausable is Ownable {
+    //  1) create a private '_paused' variable of type bool
+    bool private _paused;
+
+    //  2) create a public setter using the inherited onlyOwner modifier 
+    function pauseContract(bool _value) public onlyOwner 
+    {
+        _paused = _value;
+        if(_paused)
+        {
+            emit Paused(msg.sender);
+        } else {
+            emit Unpaused(msg.sender);
+        }
+    }
+
+    //  3) create an internal constructor that sets the _paused variable to false
+    constructor() public 
+    {
+        _paused = false;
+    }
+
+    //  4) create 'whenNotPaused' & 'paused' modifier that throws in the appropriate situation
+    modifier whenNotPaused() 
+    {
+        require(_paused == false, 'Contract is paused');
+        _;
+    }
+
+    modifier paused()
+    {
+        require(_paused == true, 'Contract is not paused');
+        _;
+    }
+
+
+    //  5) create a Paused & Unpaused event that emits the address that triggered the event
+    event Paused(address _initiator);
+
+    event Unpaused(address _initiator);
+}
+
+
+
+
 
 contract ERC165 {
     bytes4 private constant _INTERFACE_ID_ERC165 = 0x01ffc9a7;
@@ -439,6 +480,7 @@ contract ERC721Metadata is ERC721Enumerable, usingOraclize {
     // TODO: Create private vars for token _name, _symbol, and _baseTokenURI (string)
 
     // TODO: create private mapping of tokenId's to token uri's called '_tokenURIs'
+    mapping(uint256 => string) private _tokenURIs;
 
     bytes4 private constant _INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
     /*
